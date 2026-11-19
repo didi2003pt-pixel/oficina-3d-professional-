@@ -6,7 +6,7 @@
   "description": "Visualizador 3D conceptual de oficina de veículos pesados",
   "scripts": {
     "dev": "node tools/serve.mjs",
-    "test": "node --check src/config.js && node --check src/scene.js && node --check src/tires.js && node --check src/machine-parts.js && node --check src/machine-heavy.js && node --check src/machine-balance.js && node --check src/machine-alignment.js && node --check src/truck.js && node --check src/truck-cab.js && node --check src/truck-body.js && node --check src/vehicles.js && node --check src/vehicle-controller.js && node --check src/vehicle-route.js && node --check src/main.js && node tools/check.mjs"
+    "test": "node --check src/config.js && node --check src/scene.js && node --check src/tires.js && node --check src/machine-parts.js && node --check src/machine-heavy.js && node --check src/machine-balance.js && node --check src/machine-alignment.js && node --check src/truck.js && node --check src/truck-cab.js && node --check src/truck-body.js && node --check src/vehicles.js && node --check src/vehicle-controller.js && node --check src/vehicle-route.js && node --check src/vehicle-clearance.js && node --check src/main.js && node tools/check.mjs && node --test tools/check-vehicles.mjs"
   },
   "engines": {
     "node": ">=20"

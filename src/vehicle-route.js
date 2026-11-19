@@ -4,7 +4,7 @@ import { LAYOUT } from './config.js';
 export function createVehicleRoute(points = LAYOUT.route) {
   const knots = points.map(([x,z])=>new THREE.Vector3(x,.061,z));
   const curve = new THREE.CatmullRomCurve3(knots);
-  curve.arcLengthDivisions = 1024;
+  curve.arcLengthDivisions = 1000;
   const length = curve.getLength();
   const position = new THREE.Vector3();
   const tangent = new THREE.Vector3();

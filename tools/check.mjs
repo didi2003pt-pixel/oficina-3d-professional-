@@ -32,6 +32,9 @@ const selector=html.match(/<select\s+id="vehicle-select"[^>]*>([\s\S]*?)<\/selec
 assert.deepEqual([...selector.matchAll(/<option\s+value="([^"]+)"/g)].map(([,value])=>value),
   ['none','truck','jeep','car','tractor'],'Manter as quatro opções de veículos e a oficina vazia por defeito');
 assert.ok(!html.includes('data-toggle="truck"'),'O seletor substitui o controlo do camião');
+for(const id of ['vehicle-start','vehicle-pause','vehicle-reset','vehicle-status']){
+  assert.ok(html.includes(`id="${id}"`),'Falta um controlo ou o estado do percurso');
+}
 for(const [zone,zoneFactory,equipmentFactory] of [
   ['heavy','makeHeavy','buildHeavyChanger'],
   ['balance','makeBalancing','buildBalancingEquipment'],

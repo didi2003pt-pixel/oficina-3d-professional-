@@ -54,6 +54,12 @@
             <option value="tractor">Trator</option>
           </select>
         </div>
+        <div class="vehicle-playback" role="group" aria-label="Percurso do veículo">
+          <button class="btn small primary" id="vehicle-start" type="button" disabled>Iniciar percurso</button>
+          <button class="btn small" id="vehicle-pause" type="button" disabled>Pausar</button>
+          <button class="btn small" id="vehicle-reset" type="button" disabled>Reiniciar percurso</button>
+        </div>
+        <p id="vehicle-status" class="vehicle-status" role="status" aria-atomic="true"></p>
       </section>
 
       <div class="viewport" id="viewport">

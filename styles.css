@@ -56,3 +56,39 @@
 @media (min-width: 681px) and (max-height: 620px) {
   .workspace { height: auto; min-height: 100dvh; }
 }
+
+.vehicle-playback {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.vehicle-playback .btn.small {
+  min-height: 34px;
+  padding: 4px 10px;
+  font-size: 11px;
+}
+
+.vehicle-playback .btn:disabled {
+  border-color: var(--line);
+  background: #14202b;
+  color: #8494a1;
+  filter: none;
+  cursor: default;
+}
+
+.vehicle-status {
+  min-width: 0;
+  margin: 0;
+  color: #c1cbd2;
+  font-size: 11px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 680px) {
+  .vehicle-controls { column-gap: 10px; }
+  .vehicle-playback { order: 2; flex-basis: 100%; }
+  .vehicle-playback .btn.small { flex: 1 1 auto; min-height: 40px; }
+  .vehicle-status { order: 1; flex: 1 1 0; }
+}

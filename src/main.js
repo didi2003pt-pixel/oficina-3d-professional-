@@ -5,12 +5,14 @@ import { LAYOUT, TOUR, ZONES, ZONE_BY_ID } from './config.js';
 import { createWorkshop } from './scene.js';
 import { createVehicleModel, VEHICLE_TYPES } from './vehicles.js';
 import { createVehicleController } from './vehicle-controller.js';
+import { createRouteValidator } from './vehicle-clearance.js';
 
 const $ = id => document.getElementById(id);
 const host=$('scene');
 const { scene, structure, roof, flow, vehicleRoute, vehicleSlot, groups, elements } = createWorkshop();
 const vehicles = createVehicleController(vehicleSlot,vehicleRoute,createVehicleModel,{
-  getBounds:model=>new THREE.Box3().setFromObject(model,true)
+  getBounds:model=>new THREE.Box3().setFromObject(model,true),
+  validateRoute:createRouteValidator(vehicleRoute,[structure,roof,...elements])
 });
 const renderer = new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.65));
@@ -261,7 +263,24 @@ function toggle(name,button){
 document.querySelectorAll('[data-toggle]').forEach(btn=>btn.addEventListener('click',()=>toggle(btn.dataset.toggle,btn)));
 
 const vehicleSelect=$('vehicle-select');
+const vehicleStart=$('vehicle-start');
+const vehiclePause=$('vehicle-pause');
+const vehicleReset=$('vehicle-reset');
+const vehicleStatus=$('vehicle-status');
 vehicleSelect.value=vehicles.type;
+const routeMessages={
+  empty:'', idle:'Pronto junto à entrada', running:'Em movimento',
+  paused:'Percurso em pausa', finished:'Chegada à saída',
+  unavailable:'Percurso indisponível para este veículo'
+};
+function updateVehicleControls(){
+  const {status}=vehicles;
+  vehicleStart.disabled=status!=='idle';
+  vehiclePause.disabled=status!=='running' && status!=='paused';
+  vehicleReset.disabled=status==='empty' || status==='unavailable';
+  vehiclePause.textContent=status==='paused'?'Continuar':'Pausar';
+  vehicleStatus.textContent=routeMessages[status];
+}
 function canPlaceVehicle(model,bounds){
   return mode!=='walk' || !vehicleOccupies(model,bounds,walkCamera.position.x,walkCamera.position.z);
 }
@@ -276,7 +295,20 @@ vehicleSelect.addEventListener('change',()=>{
     if(mode==='orbit')goTo(index);
     else updateTourUI();
   }
+  updateVehicleControls();
 });
+vehicleStart.addEventListener('click',()=>{
+  if(vehicles.start())updateVehicleControls();
+});
+vehiclePause.addEventListener('click',()=>{
+  const changed=vehicles.status==='paused' ? vehicles.start() : vehicles.pause();
+  if(changed)updateVehicleControls();
+});
+vehicleReset.addEventListener('click',()=>{
+  if(vehicles.restart(canPlaceVehicle))updateVehicleControls();
+  else toast('Afasta-te da zona de entrada para reiniciar o percurso.');
+});
+updateVehicleControls();
 
 function hideDetail(){
   selectedZone=null;$('detail-card').hidden=true;
@@ -429,6 +461,10 @@ goTo(0,true);
 
 function animate(){
   const dt=clock.getDelta();
+  if(vehicles.update(Math.min(dt,.1),mode==='walk'?canPlaceVehicle:undefined)){
+    updateVehicleControls();
+    if(vehicles.status==='paused')toast('Percurso em pausa. Afasta-te do veículo para continuar.');
+  }
   if(mode==='walk')walkStep(dt);
   else if(mode==='top')mapControls.update();
   else{
