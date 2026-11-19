@@ -245,6 +245,7 @@ function toggle(name,button){
       return;
     }
     truck.visible=!truck.visible;button.classList.toggle('active',!truck.visible);
+    if(!truck.visible && selectedZone==='truck')hideDetail();
     button.setAttribute('aria-pressed',String(!truck.visible));
     button.querySelector('span').textContent=truck.visible?'Ocultar camião':'Mostrar camião';
   }
@@ -289,7 +290,8 @@ renderer.domElement.addEventListener('pointerup',e=>{
   const rect=renderer.domElement.getBoundingClientRect();
   mouse.set((e.clientX-rect.left)/rect.width*2-1,-((e.clientY-rect.top)/rect.height*2-1));
   raycaster.setFromCamera(mouse,activeCamera);
-  const hits=raycaster.intersectObjects([...groups.values()],true);
+  const visibleGroups=[...groups.values()].filter(group=>group.visible);
+  const hits=raycaster.intersectObjects(visibleGroups,true);
   for(const hit of hits){
     let node=hit.object;
     while(node && !node.userData.zoneId)node=node.parent;
