@@ -33,8 +33,8 @@ Não é necessário `npm install`, porque o servidor de desenvolvimento e os tes
 - **Modelo 3D real em WebGL** com paredes, portões abertos, cobertura semi-transparente, iluminação e sinalização.
 - **Máquinas e equipamentos conceptuais independentes**: pneus pesados, montagem/equilibragem, alinhamento, camião de caixa, equipamento vermelho de dois postes, rack industrial de pneus e bloco de escritórios.
 - **Visita guiada de 11 etapas** com câmaras animadas.
-- **Navegação livre**: rodar, aproximar, afastar e deslocar a câmara.
-- **Caminhar na oficina**: WASD/setas, clique na imagem para controlar o olhar com o rato e tecla ESC para libertar. Colisões básicas ilustrativas.
+- **Navegação livre**: a visão geral enquadra a oficina conforme o tamanho do visualizador. Podes rodar, aproximar, afastar e deslocar a câmara. «Repor vista» regressa à visão geral.
+- **Caminhar na oficina**: WASD/setas para andar, Shift para acelerar, clique no visualizador para controlar o olhar com o rato e Esc para o libertar. A caminhada começa no corredor da entrada e fica delimitada ao interior da nave, do lado da oficina.
 - **Planta superior** em projeção ortográfica.
 - **Selecionar objetos** para abrir informação sobre cada zona.
 - **Alternar visibilidade** de cobertura, circulação, etiquetas e camião.

@@ -443,5 +443,5 @@ export function createWorkshop() {
   wallPosters(scene);
   const groups=new Map();
   scene.traverse(object=>{if(object.userData.zoneId)groups.set(object.userData.zoneId,object);});
-  return {scene,roof:base.roof,flow,truck:groups.get('truck'),groups,elements,zoneData:ZONES};
+  return {scene,structure:base.structure,roof:base.roof,flow,truck:groups.get('truck'),groups,elements,zoneData:ZONES};
 }
