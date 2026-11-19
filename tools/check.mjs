@@ -11,6 +11,10 @@ assert.equal(LAYOUT.entrance.wall,'left','A entrada deve permanecer à esquerda'
 assert.equal(LAYOUT.exit.wall,'front','A saída deve permanecer na frente');
 assert.ok(LAYOUT.exit.opening>=6,'A saída deve continuar ampla no modelo conceptual');
 assert.ok(LAYOUT.route[0][0] < -19,'O percurso deve começar junto à entrada');
+assert.equal(LAYOUT.route[0][1],LAYOUT.entrance.z,'O percurso deve começar no novo centro do portão');
+assert.equal(ZONES.find(z=>z.id==='entrance').position[2],LAYOUT.entrance.z,'Etiqueta da entrada deve acompanhar o portão');
+assert.equal(ZONES.find(z=>z.id==='alignment').position[0],6.2+LAYOUT.alignmentShiftX,'Alinhamento deve acompanhar o desvio conceptual');
+assert.equal(TOUR.find(t=>t.zone==='alignment').target[0],6.2+LAYOUT.alignmentShiftX,'Câmara do alinhamento deve acompanhar o desvio');
 assert.ok(LAYOUT.route.at(-1)[1] > 13,'O percurso deve acabar na saída frontal');
 assert.ok(!ZONES.some(z=>z.id==='elevator'),'Não restaurar antiga zona adicional ELEVADOR');
 assert.ok(TOUR.length >= 10,'A visita deve cobrir todas as zonas');
