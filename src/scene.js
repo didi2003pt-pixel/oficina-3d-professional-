@@ -251,7 +251,8 @@ function buildFlow(scene) {
     flatArrow(flow,p.x,p.z,Math.atan2(tan.z,tan.x),.87);
   });
   // Eixos de referência na entrada e junto à saída sem invadir área útil.
-  stripe(flow,-19.2,-10,-15.5,-10,.07,M.yellow);
+  const entryMarkZ=LAYOUT.entrance.z-LAYOUT.entrance.opening/2;
+  stripe(flow,-19.2,entryMarkZ,-15.5,entryMarkZ,.07,M.yellow);
   stripe(flow,7.2,12.9,7.2,14,.08,M.yellow);
   return flow;
 }
@@ -299,6 +300,8 @@ function makeBalancing(scene) {
 }
 function makeAlignment(scene) {
   const g=group(scene,'Zona de alinhamento','alignment');
+  // Deslocar o conjunto completo (equipamentos, marcações e placa) sem alterar a geometria interna.
+  g.position.x=LAYOUT.alignmentShiftX;
   outline(g,6.1,-10,8.2,6.8);
   sign(g,'ALINHAMENTO',6.2,5.0,-13.45,6.6,.9);
   for(const x of [4.85,7.45]) {
