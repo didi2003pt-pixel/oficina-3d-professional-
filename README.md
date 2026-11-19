@@ -1,34 +1,73 @@
 # Oficina 3D Professional
 
-Aplicação web para visualização tridimensional e visita guiada de uma oficina de pneus e veículos pesados.
+**Primeiro visualizador 3D conceptual implementado.** Uma aplicação web de Three.js com navegação em tempo real, exploração de uma oficina de pneus e veículos pesados e visita guiada em português de Portugal.
 
-> **Estado:** protótipo de desenvolvimento. As dimensões são ilustrativas e não constituem validação de engenharia, segurança ou circulação real.
+> **Projeto conceptual:** todos os equipamentos, dimensões e trajetos de circulação estão aproximados. Não constitui uma validação de engenharia, acessibilidade, segurança ou manobras reais.
 
-## Objetivo
-Reproduzir uma oficina 3D navegável, com máquinas e divisões independentes, visita guiada por zonas e evolução futura para análise de layout e percursos.
+## Abrir a demonstração
 
-## Referência visual aprovada
-- Entrada pela **parede lateral esquerda**.
-- Saída na **fachada frontal direita**, com área livre e espaçosa.
-- Zonas técnicas ao fundo: **pneus pesados**, **montagem/equilibragem** e **alinhamento**.
-- Camião e equipamento de **dois postes** na área central.
-- Rack vermelho de pneus junto à fachada frontal.
-- Bloco administrativo envidraçado no lado direito: balneários, receção/espera, sala de reuniões e escritório.
-- **Não** recriar a antiga área adicional identificada como `ELEVADOR` ao lado do alinhamento.
-- **Não** recriar as três marcações retangulares no chão junto à saída.
-- Não recuperar as setas antigas de circulação errada junto à esquerda.
+Depois de ativar **Settings → Pages → Build and deployment → Source: GitHub Actions**, o workflow publica automaticamente a aplicação em:
 
-## Desenvolvimento
-O projeto é organizado por fases controladas. Antes de cada mudança, consultar `AGENTS.md`, `docs/ESPECIFICACAO.md` e `docs/PLANO.md`.
+**https://didi2003pt-pixel.github.io/oficina-3d-professional-/**
 
-### Princípios
-1. Preservar o que já funciona.
-2. Uma alteração concreta de cada vez.
-3. Rever visualmente antes de integrar.
-4. Distinguir representação conceptual de projeto dimensionado.
+Se aparecer erro 404, o GitHub Pages ainda não está ativo ou a publicação ainda não foi concluída. Consultar o separador **Actions** para os resultados do workflow `Publicar visualizador 3D`.
 
-## Execução
-As instruções técnicas e os comandos de arranque serão acrescentados na primeira implementação executável, junto ao `package.json`.
+## Executar no computador (Windows)
 
-## Segurança e privacidade
-Este repositório pode estar público. Não publicar plantas reais, moradas, dados de clientes, fichas de trabalhadores ou outros materiais internos sem autorização.
+Requisitos: Node.js 20 ou superior e ligação à Internet (a biblioteca Three.js é carregada por CDN).
+
+```powershell
+git clone https://github.com/didi2003pt-pixel/oficina-3d-professional-.git
+cd oficina-3d-professional-
+npm run dev
+```
+
+Abrir **http://localhost:4173/** no Chrome ou Edge.
+
+Alternativa, com Python instalado: `py -m http.server 8000` e abrir **http://localhost:8000/**.
+
+Não é necessário `npm install`, porque o servidor de desenvolvimento e os testes usam apenas módulos nativos do Node.js.
+
+## Funcionalidades implementadas
+
+- **Modelo 3D real em WebGL** com paredes, portões abertos, cobertura semi-transparente, iluminação e sinalização.
+- **Máquinas e equipamentos conceptuais independentes**: pneus pesados, montagem/equilibragem, alinhamento, camião de caixa, equipamento vermelho de dois postes, rack industrial de pneus e bloco de escritórios.
+- **Visita guiada de 11 etapas** com câmaras animadas.
+- **Navegação livre**: rodar, aproximar, afastar e deslocar a câmara.
+- **Caminhar na oficina**: WASD/setas, clique na imagem para controlar o olhar com o rato e tecla ESC para libertar. Colisões básicas ilustrativas.
+- **Planta superior** em projeção ortográfica.
+- **Selecionar objetos** para abrir informação sobre cada zona.
+- **Alternar visibilidade** de cobertura, circulação, etiquetas e camião.
+- **Layout aprovado**: entrada na parede esquerda, saída frontal direita ampla, ausência das três caixas no pavimento de saída, alinhamento sem a antiga zona adicional «ELEVADOR».
+
+## Testes
+
+```bash
+npm test
+```
+
+Faz verificação de sintaxe dos módulos e testes estáticos do layout e interface. **Os testes automáticos não substituem a revisão visual e funcional em browser.**
+
+## Estrutura
+
+```text
+index.html                  Interface
+styles.css                  Estilo visual responsivo
+src/config.js               Zonas, medidas conceptuais e visita
+src/scene.js                Geometria, máquinas, edifício, materiais
+src/main.js                 Renderização, câmaras, interação, visita
+tools/serve.mjs             Servidor local sem dependências
+tools/check.mjs             Testes estáticos
+.github/workflows/pages.yml CI e publicação GitHub Pages
+docs/ESPECIFICACAO.md       Regras visuais e funcionais
+docs/PLANO.md               Fases de evolução
+AGENTS.md                   Regras para alterações futuras
+```
+
+## Referências e limitações
+
+A disposição foi interpretada a partir da última imagem aprovada na conversa do projeto. Ainda será necessário adicionar a imagem de referência ao repositório e afinar o modelo após a primeira comparação visual.
+
+A geometria está centralizada em **metros ilustrativos** em `src/config.js`. A circulação amarela expressa o fluxo pretendido, **não um trajeto de manobra validado**. Para a próxima fase, confirmar dimensões reais, espaços operacionais e raios de viragem.
+
+A biblioteca Three.js é importada da CDN em versão fixa. Para uso offline completo, uma fase posterior poderá integrar as dependências localmente.
