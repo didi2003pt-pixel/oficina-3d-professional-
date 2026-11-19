@@ -6,7 +6,7 @@ import { buildHeavyChanger } from './machine-heavy.js';
 import { buildBalancingEquipment } from './machine-balance.js';
 import { buildAlignmentEquipment } from './machine-alignment.js';
 import { batchMachineParts } from './machine-parts.js';
-import { createTruck } from './truck.js';
+import { createVehicleRoute } from './vehicle-route.js';
 
 const C = {
   floor: 0x59636b, foundation: 0x303942, wall: 0x727e89,
@@ -230,14 +230,12 @@ function buildHall(scene) {
   sign(structure,'OFICINA DE VEÍCULOS PESADOS',-2.5,6.4,-13.73,9.2,.72);
   return {structure,roof};
 }
-function buildFlow(scene) {
+function buildFlow(scene,curve) {
   const flow=group(scene,'Percurso indicativo','flow');
-  const pts=LAYOUT.route.map(p=>new THREE.Vector3(p[0],.061,p[1]));
-  const curve=new THREE.CatmullRomCurve3(pts,false,'centripetal',.22);
   const geometry=new THREE.TubeGeometry(curve,105,.075,5,false);
   flow.add(new THREE.Mesh(geometry,M.yellow));
   [0.1,.28,.49,.68,.84,.95].forEach(t=>{
-    const p=curve.getPoint(t),tan=curve.getTangent(t);
+    const p=curve.getPointAt(t),tan=curve.getTangentAt(t);
     flatArrow(flow,p.x,p.z,Math.atan2(tan.z,tan.x),.87);
   });
   // Eixos de referência na entrada e junto à saída sem invadir área útil.
@@ -402,14 +400,6 @@ function makeRack(scene) {
   outline(g,-8.25,z,20.6,3.2,M.grey);
   return g;
 }
-function makeTruck(scene) {
-  const truck=createTruck();
-  truck.position.set(-7.8,0,1.5);
-  truck.userData.zoneId='truck';
-  scene.add(truck);
-  outline(scene,-7.8,3.1,5,15.3,M.grey);
-  return truck;
-}
 function makeLift(scene) {
   const g=group(scene,'Elevador de dois postes central','lift');
   for(const x of [1.6,5.5]){
@@ -488,13 +478,16 @@ export function createWorkshop() {
   scene.fog=new THREE.Fog(0x101922,80,160);
   lights(scene);
   const base=buildHall(scene);
-  const flow=buildFlow(scene);
+  const vehicleRoute=createVehicleRoute();
+  const flow=buildFlow(scene,vehicleRoute.curve);
+  const vehicleSlot=group(scene,'Veículo selecionado','truck');
+  outline(scene,-7.8,3.1,5,15.3,M.grey);
   const elements=[
     makeHeavy(scene),makeBalancing(scene),makeAlignment(scene),
-    makeTruck(scene),makeLift(scene),makeRack(scene),makeOffice(scene)
+    makeLift(scene),makeRack(scene),makeOffice(scene)
   ];
   wallPosters(scene);
   const groups=new Map();
   scene.traverse(object=>{if(object.userData.zoneId)groups.set(object.userData.zoneId,object);});
-  return {scene,structure:base.structure,roof:base.roof,flow,truck:groups.get('truck'),groups,elements,zoneData:ZONES};
+  return {scene,structure:base.structure,roof:base.roof,flow,vehicleRoute,vehicleSlot,groups,elements,zoneData:ZONES};
 }

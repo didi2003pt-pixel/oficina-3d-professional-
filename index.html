@@ -40,8 +40,21 @@
     <main class="workspace">
       <header class="topbar">
         <div><div class="eyebrow">VISUALIZAÇÃO ARQUITETÓNICA</div><h2 id="current-title">Visão geral da oficina</h2></div>
-        <div class="topbar-actions"><span class="version">CONCEITO · V0.5</span><button id="reset" class="btn small ghost" title="Repor câmara">↺ <span>Repor vista</span></button></div>
+        <div class="topbar-actions"><span class="version">CONCEITO · V0.6</span><button id="reset" class="btn small ghost" title="Repor câmara">↺ <span>Repor vista</span></button></div>
       </header>
+
+      <section class="vehicle-controls" aria-labelledby="vehicle-select-label">
+        <div class="vehicle-field">
+          <label id="vehicle-select-label" class="eyebrow" for="vehicle-select">Veículos</label>
+          <select id="vehicle-select" autocomplete="off">
+            <option value="none" selected>Sem veículo</option>
+            <option value="truck">Camião</option>
+            <option value="jeep">Jipe</option>
+            <option value="car">Carro ligeiro</option>
+            <option value="tractor">Trator</option>
+          </select>
+        </div>
+      </section>
 
       <div class="viewport" id="viewport">
         <div id="scene" role="img" aria-label="Modelo tridimensional interativo da oficina"></div>
@@ -60,7 +73,6 @@
           <button class="tool-btn active" data-toggle="roof" aria-pressed="true" title="Mostrar/ocultar a cobertura">⌂ <span>Cobertura</span></button>
           <button class="tool-btn active" data-toggle="flow" aria-pressed="true" title="Mostrar/ocultar fluxo">➜ <span>Circulação</span></button>
           <button class="tool-btn active" data-toggle="labels" aria-pressed="true" title="Mostrar/ocultar etiquetas">⌗ <span>Etiquetas</span></button>
-          <button class="tool-btn" data-toggle="truck" aria-pressed="false" title="Ocultar/mostrar o camião">▣ <span>Ocultar camião</span></button>
         </div>
 
         <div class="scale-note">ESCALA ILUSTRATIVA <span>·</span> unidades em metros</div>

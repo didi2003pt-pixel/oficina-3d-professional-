@@ -27,7 +27,11 @@ for(const marker of ['id="scene"','id="tour-list"','id="next"','id="previous"','
 }
 assert.ok(style.includes('.viewport'),'Estilos do visualizador não encontrados');
 assert.ok(main.includes('requestPointerLock'),'Caminhada virtual não encontrada');
-assert.ok(scene.includes('makeRack')&&scene.includes('makeTruck'),'Faltam equipamentos 3D');
+assert.ok(scene.includes('makeRack')&&scene.includes('vehicleSlot'),'Faltam equipamentos 3D');
+const selector=html.match(/<select\s+id="vehicle-select"[^>]*>([\s\S]*?)<\/select>/)?.[1] ?? '';
+assert.deepEqual([...selector.matchAll(/<option\s+value="([^"]+)"/g)].map(([,value])=>value),
+  ['none','truck','jeep','car','tractor'],'Manter as quatro opções de veículos e a oficina vazia por defeito');
+assert.ok(!html.includes('data-toggle="truck"'),'O seletor substitui o controlo do camião');
 for(const [zone,zoneFactory,equipmentFactory] of [
   ['heavy','makeHeavy','buildHeavyChanger'],
   ['balance','makeBalancing','buildBalancingEquipment'],
