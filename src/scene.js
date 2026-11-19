@@ -147,15 +147,15 @@ function plant(parent,x,z,scale=1) {
   return g;
 }
 function lights(scene) {
-  scene.add(new THREE.HemisphereLight(0xeaf4ff,0x344454,2.45));
-  const key=new THREE.DirectionalLight(0xfff5e4,3.0);
+  scene.add(new THREE.HemisphereLight(0xf2f6fc,0x414b56,2.45));
+  const key=new THREE.DirectionalLight(0xfff6ea,2.82);
   key.position.set(-18,30,22);key.castShadow=true;
   key.shadow.mapSize.set(2048,2048);
   key.shadow.camera.left=-35;key.shadow.camera.right=35;
   key.shadow.camera.top=35;key.shadow.camera.bottom=-35;
   key.shadow.camera.far=95;key.shadow.bias=-.00015;
   scene.add(key);
-  const fill=new THREE.DirectionalLight(0xb5d6ef,1.1);
+  const fill=new THREE.DirectionalLight(0xc9dcf1,1.2);
   fill.position.set(20,14,-18);scene.add(fill);
 }
 function buildHall(scene) {
