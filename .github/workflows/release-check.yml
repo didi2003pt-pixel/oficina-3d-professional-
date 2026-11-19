@@ -1,0 +1,25 @@
+name: Validar consolidação antes da publicação
+
+on:
+  push:
+    branches:
+      - release/consolidacao-v05
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Testes de regressão
+        run: npm test
+      - name: Verificar integridade do diff
+        run: git diff --check HEAD^ HEAD
