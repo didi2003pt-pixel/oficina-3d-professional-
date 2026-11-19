@@ -1,6 +1,7 @@
 
 import * as THREE from 'three';
 import { LAYOUT, ZONES } from './config.js';
+import { createTireAssets } from './tires.js';
 
 const C = {
   floor: 0x59636b, foundation: 0x303942, wall: 0x727e89,
@@ -8,7 +9,7 @@ const C = {
   black: 0x12171c, red: 0xb82229, redBright: 0xf04448,
   gold: 0xf6c04d, yellow: 0xf6c748, glass: 0x8ec4d8,
   white: 0xe4eaf0, offWhite: 0xcdd6df, grey: 0x929da6,
-  rubber: 0x171a1d, rubberLight: 0x30343a, wood: 0x987554,
+  wood: 0x987554,
   greenery: 0x3f805d, monitor: 0x24485a
 };
 
@@ -26,8 +27,8 @@ const M = {
   white: mat(C.white,{roughness:.5}),
   offWhite: mat(C.offWhite),
   grey: mat(C.grey,{roughness:.7}),
-  rubber: mat(C.rubber,{roughness:1}),
-  rubberLight: mat(C.rubberLight,{roughness:.95}),
+  rackRed: mat(0xa12728,{metalness:.43,roughness:.55}),
+  rackDeck: mat(0x686c70,{metalness:.58,roughness:.61}),
   wood: mat(C.wood,{roughness:.84}),
   glass: mat(C.glass,{transparent:true,opacity:.24,metalness:.08,roughness:.18,side:THREE.DoubleSide,depthWrite:false}),
   window: mat(0x92b7c9,{transparent:true,opacity:.45,metalness:.12,roughness:.15,side:THREE.DoubleSide,depthWrite:false}),
@@ -97,23 +98,36 @@ function sign(parent,text,x,y,z,width=6, height=.82) {
     new THREE.MeshBasicMaterial({map:tx,side:THREE.DoubleSide}));
   plane.position.set(x,y,z);parent.add(plane);return plane;
 }
-function tire(parent,r=.54,t=.18,x=0,y=0,z=0,face='front') {
+function tire(parent,radius,width,x,y,z,tread='rib') {
   const g=group(parent,'Pneu');
   g.position.set(x,y,z);
-  const outer=new THREE.Mesh(new THREE.TorusGeometry(r,t,11,30),M.rubber);
-  if(face==='side')outer.rotation.y=Math.PI/2;
-  outer.castShadow=true;outer.receiveShadow=true;g.add(outer);
-  const ring=new THREE.Mesh(new THREE.TorusGeometry(r*.67,.035,8,30),M.rubberLight);
-  if(face==='side') ring.rotation.y=Math.PI/2;
-  g.add(ring);return g;
-}
-function wheel(parent,x,y,z,r=.48) {
-  const g=tire(parent,r,.16,x,y,z,'side');
-  const hub=new THREE.Mesh(new THREE.CylinderGeometry(r*.45,r*.45,.065,18),M.steelLight);
-  hub.rotation.z=Math.PI/2;
-  hub.position.x=x>0? .035:-.035;g.add(hub);
-  cyl(g,.07,.07,hub.position.x,0,0,M.grey,10).rotation.z=Math.PI/2;
+  const {bodyGeometry,treadGeometry,distantBodyGeometry,bodyMaterial,treadMaterial}
+    =createTireAssets(radius,width,tread);
+  const lod=new THREE.LOD();
+  g.add(lod);
+  const detail=group(lod,'Piso detalhado');
+  const body=new THREE.Mesh(bodyGeometry,bodyMaterial);
+  const blocks=new THREE.Mesh(treadGeometry,treadMaterial);
+  body.castShadow=true;
+  body.receiveShadow=blocks.receiveShadow=true;
+  detail.add(body,blocks);
+  const distant=new THREE.Mesh(distantBodyGeometry,bodyMaterial);
+  distant.castShadow=distant.receiveShadow=true;
+  lod.addLevel(detail,0);
+  lod.addLevel(distant,24,.12);
   return g;
+}
+function wheel(parent,x,y,z) {
+  const radius=.64,width=.32;
+  const g=tire(parent,radius,width,x,y,z,'drive');
+  g.rotation.y=Math.sign(x)*Math.PI/2;
+  // O rebordo da jante encontra o talão; o cubo fica do lado exterior.
+  const rim=cyl(g,radius*.63,.15,0,0,.028,M.steelLight,24);
+  rim.rotation.x=Math.PI/2;
+  const hub=cyl(g,radius*.34,.055,0,0,.112,M.steel,18);
+  hub.rotation.x=Math.PI/2;
+  const cap=cyl(g,.07,.045,0,0,.151,M.grey,10);
+  cap.rotation.x=Math.PI/2;
 }
 function desk(parent,x,y,z,width=2.3) {
   box(parent,width,.13,.9,x,y,z,M.wood);
@@ -248,7 +262,7 @@ function makeHeavy(scene) {
   // desmontadora: mesa, plataforma e coluna industrial
   box(g,2.1,.29,1.65,-16.2,.24,-10.1,M.red);
   cyl(g,.85,.23,-16.2,.52,-10.1,M.steel);
-  tire(g,.88,.25,-16.2,1.55,-10.1,'front');
+  tire(g,1.13,.50,-16.2,1.55,-10.1,'drive');
   box(g,.38,2.4,.34,-17.15,1.45,-10.6,M.redBright);
   rod(g,[-17.1,2.65,-10.6],[-15.85,2.65,-10.6],.1,M.steel);
   cyl(g,.25,.32,-15.6,1.15,-9.4,M.black);
@@ -257,7 +271,7 @@ function makeHeavy(scene) {
   for(let i=0;i<4;i++)box(g,.79,.04,.03,-10.3,.33+i*.35,-12.04,M.steelLight,false);
   cyl(g,.5,1.18,-11.4,.6,-9.4,M.steelLight);
   // pneus temporários
-  for(let n=0;n<3;n++)tire(g,.72,.22,-11.5+n*.3,.98+n*.1,-8.2+n*.5);
+  for(let n=0;n<3;n++)tire(g,.94,.44,-11.5+n*.3,.975,-8.2+n*.5,n===1?'rib':'drive');
   return g;
 }
 function makeBalancing(scene) {
@@ -269,13 +283,13 @@ function makeBalancing(scene) {
   cyl(g,.7,.16,-7.1,1.15,-10.5,M.steelLight);
   rod(g,[-7.4,1.2,-11.1],[-7.4,2.35,-11.1],.09,M.steel);
   rod(g,[-7.4,2.35,-11.1],[-6.5,2.35,-11.1],.08,M.steel);
-  tire(g,.52,.17,-7.1,1.48,-10.5);
+  tire(g,.69,.34,-7.1,1.48,-10.5);
   // equilibradora
   box(g,1.4,1.25,1.1,-3.5,.64,-11.1,M.red);
   box(g,.62,.5,.14,-3.3,1.73,-11.1,M.black);
   box(g,.53,.38,.15,-3.3,1.73,-11.02,M.screen);
   rod(g,[-3.5,1.15,-10.55],[-3.5,1.15,-9.65],.1,M.steelLight);
-  tire(g,.49,.15,-3.5,1.18,-9.6,'front');
+  tire(g,.64,.30,-3.5,1.18,-9.6);
   // bancadas e caixas ferramentas
   box(g,2.5,1.02,.86,-.9,.51,-12.3,M.red);
   box(g,2.7,.11,1.01,-.9,1.05,-12.3,M.steelLight);
@@ -303,23 +317,126 @@ function makeAlignment(scene) {
   }
   return g;
 }
+function rackBatch(parent,name,geometry,material,matrices,castShadow=true) {
+  const mesh=new THREE.InstancedMesh(geometry,material,matrices.length);
+  mesh.name=name;
+  for(const [i,matrix] of matrices.entries())mesh.setMatrixAt(i,matrix);
+  mesh.instanceMatrix.needsUpdate=true;
+  mesh.castShadow=castShadow;
+  mesh.receiveShadow=true;
+  parent.add(mesh);
+  return mesh;
+}
 function makeRack(scene) {
   const g=group(scene,'Armazenamento de pneus','rack');
-  const x0=-18.0, x1=1.5,z=11.0;
-  for(const y of [.2,1.9,3.6]){
-    box(g,x1-x0+.6,.12,1.5,(x0+x1)/2,y,z,M.red);
+  const posts=[-18,-13.2,-8.4,-3.6,1.5],z=11;
+  const shelves=[.26,1.96,3.66];
+  const steelParts=new Map();
+  const transform=new THREE.Object3D();
+  const upright=new THREE.Vector3(0,1,0);
+  const noRotation=new THREE.Quaternion();
+  const unitBox=new THREE.BoxGeometry(1,1,1);
+
+  function part(material,x,y,z,width,height,depth,rotation=noRotation){
+    if(!steelParts.has(material))steelParts.set(material,[]);
+    transform.position.set(x,y,z);
+    transform.scale.set(width,height,depth);
+    transform.quaternion.copy(rotation);
+    transform.updateMatrix();
+    steelParts.get(material).push(transform.matrix.clone());
   }
-  for(const x of [x0,-13.2,-8.4,-3.6,x1]){
-    box(g,.19,4.75,1.6,x,2.37,z,M.red);
-    rod(g,[x,.1,z-.75],[x,4.68,z+.74],.035,M.steel);
+  function brace(from,to){
+    const start=new THREE.Vector3(...from),end=new THREE.Vector3(...to);
+    const offset=end.clone().sub(start);
+    const centre=start.lerp(end,.5);
+    const rotation=new THREE.Quaternion().setFromUnitVectors(upright,offset.clone().normalize());
+    part(M.steel,centre.x,centre.y,centre.z,.045,offset.length(),.055,rotation);
   }
-  for(let level=0;level<2;level++){
-    for(let k=0;k<19;k++){
-      const x=x0+.66+k*.99;
-      tire(g,.43,.16,x,.86+level*1.73,z+.18);
+
+  for(const x of posts){
+    for(const side of [-1,1]){
+      const edge=z+side*.67;
+      part(M.rackRed,x,2.37,edge,.14,4.74,.14);
+      part(M.steel,x,.035,edge,.28,.07,.25);
+      for(const top of shelves){
+        // Inserção e parafusos da ligação viga-montante.
+        part(M.rackRed,x,top-.113,edge,.20,.24,.176);
+        for(const y of [top-.058,top-.155]){
+          part(M.steelLight,x,y,edge+side*.092,.04,.04,.012);
+        }
+      }
+    }
+    for(const y of [.26,1.96,3.66,4.58]){
+      part(M.rackRed,x,y-.066,z,.085,.095,1.23);
+    }
+    brace([x,.23,z-.59],[x,2.25,z+.57]);
+    brace([x,2.25,z+.57],[x,4.62,z-.59]);
+  }
+
+  const rackCentre=(posts[0]+posts.at(-1))/2;
+  const tireLod=new THREE.LOD();
+  tireLod.name='Pneus em stock';
+  tireLod.position.set(rackCentre,2,z);
+  g.add(tireLod);
+  const close=group(tireLod,'Piso detalhado');
+  const distant=group(tireLod,'Piso simplificado');
+  tireLod.addLevel(close,0);
+  tireLod.addLevel(distant,27,.12);
+  const stock={rib:[],drive:[]};
+  const radius=.44,width=.28;
+  for(let bay=0;bay<posts.length-1;bay++){
+    const left=posts[bay],right=posts[bay+1],span=right-left;
+    const x=(left+right)/2;
+    for(const top of shelves){
+      for(const side of [-1,1]){
+        part(M.rackRed,x,top-.088,z+side*.56,span-.14,.17,.12);
+      }
+      // Três painéis com as juntas entre os pontos de apoio dos pneus.
+      const panel=(span-.16)/3;
+      for(let k=0;k<3;k++){
+        part(M.rackDeck,left+.08+panel*(k+.5),top-.026,z,panel-.012,.052,1.03);
+      }
+    }
+    const rear=z-.69;
+    brace([left+.08,.25,rear],[right-.08,4.59,rear]);
+    brace([left+.08,4.59,rear-.04],[right-.08,.25,rear-.04]);
+
+    const count=bay===2?4:5;
+    for(const [level,top] of shelves.slice(0,2).entries()){
+      for(let slot=0;slot<count;slot++){
+        const scale=[.99,1,.97,1.02,1.01][(slot+bay+level)%5];
+        const centreX=left+.56+slot*(span-1.12)/(count-1);
+        const depthOffset=[.07,-.005,.035][(slot+bay+level)%3];
+        transform.position.set(centreX-rackCentre,top+radius*scale-2,depthOffset);
+        transform.scale.setScalar(scale);
+        transform.quaternion.identity();
+        transform.updateMatrix();
+        const tread=(slot+bay+level)%2?'rib':'drive';
+        const shade=[.89,.96,1][(slot+2*bay+level)%3];
+        stock[tread].push({matrix:transform.matrix.clone(),shade});
+      }
     }
   }
-  outline(g,-8.25,11,20.6,3.2,M.grey);
+
+  for(const [material,matrices] of steelParts){
+    rackBatch(g,'Perfis, ligações e prateleiras',unitBox,material,matrices);
+  }
+  for(const [tread,tires] of Object.entries(stock)){
+    const {bodyGeometry,treadGeometry,distantBodyGeometry,bodyMaterial,treadMaterial}
+      =createTireAssets(radius,width,tread);
+    const matrices=tires.map(tire=>tire.matrix);
+    const batches=[
+      rackBatch(close,'Carcaças',bodyGeometry,bodyMaterial,matrices),
+      rackBatch(close,'Blocos do piso',treadGeometry,treadMaterial,matrices,false),
+      rackBatch(distant,'Carcaças e sulcos',distantBodyGeometry,bodyMaterial,matrices)
+    ];
+    const colour=new THREE.Color();
+    for(const batch of batches){
+      for(const [i,{shade}] of tires.entries())batch.setColorAt(i,colour.setRGB(shade,shade,shade));
+      batch.instanceColor.needsUpdate=true;
+    }
+  }
+  outline(g,-8.25,z,20.6,3.2,M.grey);
   return g;
 }
 function makeTruck(scene) {

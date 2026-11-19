@@ -32,6 +32,7 @@ Não é necessário `npm install`, porque o servidor de desenvolvimento e os tes
 
 - **Modelo 3D real em WebGL** com paredes, portões abertos, cobertura semi-transparente, iluminação e sinalização.
 - **Máquinas e equipamentos conceptuais independentes**: pneus pesados, montagem/equilibragem, alinhamento, camião de caixa, equipamento vermelho de dois postes, rack industrial de pneus e bloco de escritórios.
+- **Pneus e armazém (V0.4)**: pneus procedurais com flancos arredondados e dois desenhos de piso. O rack vermelho mantém a implantação original e tem 38 pneus apoiados em dois níveis. O rack usa instâncias e simplifica o piso à distância para reduzir o custo de renderização.
 - **Visita guiada de 11 etapas** com câmaras animadas.
 - **Navegação livre**: a visão geral enquadra a oficina conforme o tamanho do visualizador. Podes rodar, aproximar, afastar e deslocar a câmara. «Repor vista» regressa à visão geral.
 - **Caminhar na oficina**: WASD/setas para andar, Shift para acelerar, clique no visualizador para controlar o olhar com o rato e Esc para o libertar. A caminhada começa no corredor da entrada e fica delimitada ao interior da nave, do lado da oficina.
@@ -55,6 +56,7 @@ index.html                  Interface
 styles.css                  Estilo visual responsivo
 src/config.js               Zonas, medidas conceptuais e visita
 src/scene.js                Geometria, máquinas, edifício, materiais
+src/tires.js                Perfis e pisos procedurais reutilizáveis
 src/main.js                 Renderização, câmaras, interação, visita
 tools/serve.mjs             Servidor local sem dependências
 tools/check.mjs             Testes estáticos
