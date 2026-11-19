@@ -13,7 +13,9 @@ assert.ok(LAYOUT.exit.opening>=6,'A saída deve continuar ampla no modelo concep
 assert.ok(LAYOUT.route[0][0] < -19,'O percurso deve começar junto à entrada');
 assert.ok(LAYOUT.route.at(-1)[1] > 13,'O percurso deve acabar na saída frontal');
 assert.ok(!ZONES.some(z=>z.id==='elevator'),'Não restaurar antiga zona adicional ELEVADOR');
-assert.ok(TOUR.length >= 10,'A visita deve cobrir todas as zonas');
+assert.deepEqual(TOUR.map(({zone})=>zone),[
+  null,'entrance','flow','heavy','balance','alignment','truck','lift','rack','office','exit'
+],'Manter as 11 etapas da visita na ordem aprovada');
 assert.equal(new Set(ZONES.map(z=>z.id)).size,ZONES.length,'IDs de zona únicos');
 for(const z of ZONES)assert.ok(typeof z.description==='string'&&z.description.length>20);
 for(const marker of ['id="scene"','id="tour-list"','id="next"','id="previous"','id="detail-card"','data-mode="walk"','data-mode="top"']){
@@ -22,4 +24,15 @@ for(const marker of ['id="scene"','id="tour-list"','id="next"','id="previous"','
 assert.ok(style.includes('.viewport'),'Estilos do visualizador não encontrados');
 assert.ok(main.includes('requestPointerLock'),'Caminhada virtual não encontrada');
 assert.ok(scene.includes('makeRack')&&scene.includes('makeTruck'),'Faltam equipamentos 3D');
+for(const [zone,zoneFactory,equipmentFactory] of [
+  ['heavy','makeHeavy','buildHeavyChanger'],
+  ['balance','makeBalancing','buildBalancingEquipment'],
+  ['alignment','makeAlignment','buildAlignmentEquipment']
+]){
+  const zoneBody=scene.split(`function ${zoneFactory}(`)[1]?.split('\nfunction ')[0] ?? '';
+  assert.match(zoneBody,new RegExp(`group\\(scene,[^\\n]+['"]${zone}['"]\\)`),
+    'Falta o grupo selecionável: '+zone);
+  assert.match(zoneBody,new RegExp(`\\b${equipmentFactory}\\(g(?:,\\s*tire)?\\)`),
+    'Falta integrar os modelos no grupo selecionável: '+zone);
+}
 console.log('Verificações estáticas concluídas: layout, etapas, interface e módulos OK.');

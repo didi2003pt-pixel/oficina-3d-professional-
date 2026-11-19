@@ -2,6 +2,10 @@
 import * as THREE from 'three';
 import { LAYOUT, ZONES } from './config.js';
 import { createTireAssets } from './tires.js';
+import { buildHeavyChanger } from './machine-heavy.js';
+import { buildBalancingEquipment } from './machine-balance.js';
+import { buildAlignmentEquipment } from './machine-alignment.js';
+import { batchMachineParts } from './machine-parts.js';
 
 const C = {
   floor: 0x59636b, foundation: 0x303942, wall: 0x727e89,
@@ -259,13 +263,8 @@ function makeHeavy(scene) {
   const g=group(scene,'Zona de pneus pesados','heavy');
   outline(g,-14.2,-10.1,10.5,6.2);
   sign(g,'PNEUS PESADOS\nMONTAGEM',-14.0,5.0,-13.45,6.8,1.03);
-  // desmontadora: mesa, plataforma e coluna industrial
-  box(g,2.1,.29,1.65,-16.2,.24,-10.1,M.red);
-  cyl(g,.85,.23,-16.2,.52,-10.1,M.steel);
-  tire(g,1.13,.50,-16.2,1.55,-10.1,'drive');
-  box(g,.38,2.4,.34,-17.15,1.45,-10.6,M.redBright);
-  rod(g,[-17.1,2.65,-10.6],[-15.85,2.65,-10.6],.1,M.steel);
-  cyl(g,.25,.32,-15.6,1.15,-9.4,M.black);
+  const machine = buildHeavyChanger(g,tire);
+  batchMachineParts(machine);
   // armário e módulo pneumático
   box(g,1.15,1.72,.62,-10.3,.86,-12.38,M.red);
   for(let i=0;i<4;i++)box(g,.79,.04,.03,-10.3,.33+i*.35,-12.04,M.steelLight,false);
@@ -278,43 +277,18 @@ function makeBalancing(scene) {
   const g=group(scene,'Zona de montagem e equilibragem','balance');
   outline(g,-4.35,-10.2,8.5,6.2);
   sign(g,'MONTAGEM E\nEQUILIBRAGEM',-4.2,5.0,-13.45,7.0,1.03);
-  // Desmontadora
-  box(g,1.5,1.0,1.3,-7.1,.55,-10.5,M.red);
-  cyl(g,.7,.16,-7.1,1.15,-10.5,M.steelLight);
-  rod(g,[-7.4,1.2,-11.1],[-7.4,2.35,-11.1],.09,M.steel);
-  rod(g,[-7.4,2.35,-11.1],[-6.5,2.35,-11.1],.08,M.steel);
-  tire(g,.69,.34,-7.1,1.48,-10.5);
-  // equilibradora
-  box(g,1.4,1.25,1.1,-3.5,.64,-11.1,M.red);
-  box(g,.62,.5,.14,-3.3,1.73,-11.1,M.black);
-  box(g,.53,.38,.15,-3.3,1.73,-11.02,M.screen);
-  rod(g,[-3.5,1.15,-10.55],[-3.5,1.15,-9.65],.1,M.steelLight);
-  tire(g,.64,.30,-3.5,1.18,-9.6);
-  // bancadas e caixas ferramentas
-  box(g,2.5,1.02,.86,-.9,.51,-12.3,M.red);
-  box(g,2.7,.11,1.01,-.9,1.05,-12.3,M.steelLight);
-  for(let i=0;i<5;i++)box(g,.34,.08,.02,-1.87+i*.45,.5,-11.86,M.steel);
-  box(g,.85,1.45,.6,-.6,.73,-9.3,M.steelLight);
+  const equipment = buildBalancingEquipment(g,tire);
+  equipment.forEach(batchMachineParts);
   return g;
 }
 function makeAlignment(scene) {
   const g=group(scene,'Zona de alinhamento','alignment');
   outline(g,6.1,-10,8.2,6.8);
   sign(g,'ALINHAMENTO',6.2,5.0,-13.45,6.6,.9);
-  for(const x of [4.85,7.45]) {
-    box(g,.73,.28,5.0,x,.24,-9.85,M.red);
-    box(g,.67,.07,4.85,x,.42,-9.85,M.steel);
-    box(g,.73,.18,.62,x,.23,-7.36,M.yellow);
-    box(g,.73,.18,.62,x,.23,-12.32,M.yellow);
-  }
-  box(g,.86,1.18,.6,9.65,.61,-12.0,M.red);
-  rod(g,[9.65,1.2,-12],[9.65,2.5,-12],.075,M.steel);
-  box(g,1.0,.74,.17,9.65,2.7,-11.96,M.black);
-  box(g,.85,.58,.185,9.65,2.7,-11.85,M.screen);
-  for(const x of [3.25,9.1]){
-    rod(g,[x,.12,-8.8],[x,2.2,-8.8],.065,M.steelLight);
-    box(g,.4,.55,.2,x,2.2,-8.8,M.black);
-  }
+  const [platform, ...equipment] = buildAlignmentEquipment(g);
+  // Agrupar cada pista separadamente mantém a passagem central livre.
+  platform.children.filter(part=>part.isGroup).forEach(batchMachineParts);
+  equipment.forEach(batchMachineParts);
   return g;
 }
 function rackBatch(parent,name,geometry,material,matrices,castShadow=true) {
