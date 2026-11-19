@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Oficina 3D Professional — Visita Virtual</title>
+  <meta name="description" content="Modelo tridimensional interativo de uma oficina de veículos pesados, com visita guiada e inspeção de equipamentos.">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module" src="./src/main.js"></script>
+</head>
+<body>
+  <div id="app">
+    <aside class="sidebar" aria-label="Navegação e visita guiada">
+      <header class="brand">
+        <div class="brand-icon" aria-hidden="true">▤</div>
+        <div>
+          <div class="eyebrow">ESTÚDIO INDUSTRIAL · 3D</div>
+          <h1>OFICINA <span>3D</span></h1>
+        </div>
+      </header>
+      <p class="intro">Explora os espaços da oficina em tempo real. Percorre cada zona, inspeciona os equipamentos e experimenta diferentes perspetivas.</p>
+      <div class="divider"></div>
+      <div class="side-heading"><span>VISITA GUIADA</span><span id="step-total" class="side-counter">01 / 11</span></div>
+      <nav id="tour-list" class="tour-list" aria-label="Pontos da visita"></nav>
+      <div class="sidebar-bottom">
+        <div class="status-dot"><span></span> Modelo conceptual navegável</div>
+        <p>Dimensões e trajetos ilustrativos. Não constitui projeto técnico ou validação da circulação de camiões.</p>
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <header class="topbar">
+        <div><div class="eyebrow">VISUALIZAÇÃO ARQUITETÓNICA</div><h2 id="current-title">Visão geral da oficina</h2></div>
+        <div class="topbar-actions"><span class="version">CONCEITO · V0.2</span><button id="reset" class="btn small ghost" title="Repor câmara">↺ <span>Repor vista</span></button></div>
+      </header>
+
+      <div class="viewport" id="viewport">
+        <div id="scene" role="img" aria-label="Modelo tridimensional interativo da oficina"></div>
+        <div id="fallback" class="fallback" hidden>
+          <strong>Não foi possível iniciar a visualização 3D.</strong>
+          <p>Abre esta página num navegador moderno com WebGL e ligação à Internet, ou consulta as instruções no README do GitHub.</p>
+        </div>
+        <div class="viewport-hint"><span class="hint-dot"></span><span id="mode-help">Arrasta para rodar · Roda do rato para aproximar · Botão direito para deslocar</span></div>
+        <div class="mode-switch" aria-label="Modo de navegação">
+          <button class="mode-btn active" data-mode="orbit" title="Vista livre">◈ <span>Livre</span></button>
+          <button class="mode-btn" data-mode="walk" title="Explorar ao nível do chão">♙ <span>Caminhar</span></button>
+          <button class="mode-btn" data-mode="top" title="Vista de cima">⊞ <span>Planta</span></button>
+        </div>
+
+        <div class="tools" aria-label="Opções do modelo">
+          <button class="tool-btn active" data-toggle="roof" aria-pressed="true" title="Mostrar/ocultar a cobertura">⌂ <span>Cobertura</span></button>
+          <button class="tool-btn active" data-toggle="flow" aria-pressed="true" title="Mostrar/ocultar fluxo">➜ <span>Circulação</span></button>
+          <button class="tool-btn active" data-toggle="labels" aria-pressed="true" title="Mostrar/ocultar etiquetas">⌗ <span>Etiquetas</span></button>
+          <button class="tool-btn" data-toggle="truck" aria-pressed="false" title="Ocultar/mostrar o camião">▣ <span>Ocultar camião</span></button>
+        </div>
+
+        <div class="scale-note">ESCALA ILUSTRATIVA <span>·</span> unidades em metros</div>
+        <div class="compass" aria-hidden="true"><span>N</span> +Z</div>
+        <div id="labels-layer" class="labels-layer" aria-hidden="true"></div>
+        <div class="notice" id="notice" role="status" aria-live="polite"></div>
+        <div class="detail-card" id="detail-card" hidden>
+          <button id="close-detail" class="detail-close" aria-label="Fechar detalhe">×</button>
+          <div class="eyebrow">INSPEÇÃO DE ELEMENTO</div>
+          <h3 id="detail-title"></h3>
+          <p id="detail-text"></p>
+          <div class="detail-meta">Geometria conceptual · dimensões por confirmar</div>
+          <button id="focus-selection" class="btn small">Focar objeto ↗</button>
+        </div>
+      </div>
+
+      <footer class="tourbar">
+        <div class="tourbar-main">
+          <div class="progress-track"><span id="tour-progress"></span></div>
+          <div class="tour-caption"><div class="step-label" id="step-label">ETAPA 01 / 11</div><h3 id="step-title">Visão geral</h3><p id="step-description">Uma vista completa da oficina em 3D.</p></div>
+        </div>
+        <div class="tourbar-buttons"><button id="previous" class="btn secondary">← Anterior</button><button id="next" class="btn primary">Seguinte →</button></div>
+      </footer>
+    </main>
+  </div>
+  <noscript>Ativa o JavaScript para explorar o modelo tridimensional.</noscript>
+</body>
+</html>
