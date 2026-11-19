@@ -100,7 +100,12 @@ function updateTourUI(){
 function toOrbit(){
   if(document.pointerLockElement===renderer.domElement)document.exitPointerLock();
   mode='orbit';activeCamera=camera;
+  controls.object=camera;
+  controls.enableRotate=true;
   controls.enabled=true;
+  camera.position.set(...TOUR[index].position);
+  controls.target.set(...TOUR[index].target);
+  controls.update();
   setModeButtons();
 }
 function setModeButtons(){
