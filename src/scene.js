@@ -6,13 +6,14 @@ import { buildHeavyChanger } from './machine-heavy.js';
 import { buildBalancingEquipment } from './machine-balance.js';
 import { buildAlignmentEquipment } from './machine-alignment.js';
 import { batchMachineParts } from './machine-parts.js';
+import { createVehicleRoute } from './vehicle-route.js';
 
 const C = {
   floor: 0x59636b, foundation: 0x303942, wall: 0x727e89,
   dark: 0x1b2733, steel: 0x414c56, steelLight: 0x83909a,
   black: 0x12171c, red: 0xb82229, redBright: 0xf04448,
   gold: 0xf6c04d, yellow: 0xf6c748, glass: 0x8ec4d8,
-  white: 0xe4eaf0, offWhite: 0xcdd6df, grey: 0x929da6,
+  grey: 0x929da6,
   wood: 0x987554,
   greenery: 0x3f805d, monitor: 0x24485a
 };
@@ -28,14 +29,11 @@ const M = {
   red: mat(C.red,{metalness:.38,roughness:.43}),
   redBright: mat(C.redBright,{metalness:.37}),
   yellow: mat(C.yellow,{metalness:.08}),
-  white: mat(C.white,{roughness:.5}),
-  offWhite: mat(C.offWhite),
   grey: mat(C.grey,{roughness:.7}),
   rackRed: mat(0xa12728,{metalness:.43,roughness:.55}),
   rackDeck: mat(0x686c70,{metalness:.58,roughness:.61}),
   wood: mat(C.wood,{roughness:.84}),
   glass: mat(C.glass,{transparent:true,opacity:.24,metalness:.08,roughness:.18,side:THREE.DoubleSide,depthWrite:false}),
-  window: mat(0x92b7c9,{transparent:true,opacity:.45,metalness:.12,roughness:.15,side:THREE.DoubleSide,depthWrite:false}),
   screen: mat(C.monitor,{roughness:.2,emissive:0x12608b,emissiveIntensity:.56}),
   light: mat(0xfff2d4,{emissive:0xffe9b7,emissiveIntensity:2.1,roughness:.2}),
   plant: mat(C.greenery,{roughness:.9}),
@@ -121,18 +119,6 @@ function tire(parent,radius,width,x,y,z,tread='rib') {
   lod.addLevel(distant,24,.12);
   return g;
 }
-function wheel(parent,x,y,z) {
-  const radius=.64,width=.32;
-  const g=tire(parent,radius,width,x,y,z,'drive');
-  g.rotation.y=Math.sign(x)*Math.PI/2;
-  // O rebordo da jante encontra o talão; o cubo fica do lado exterior.
-  const rim=cyl(g,radius*.63,.15,0,0,.028,M.steelLight,24);
-  rim.rotation.x=Math.PI/2;
-  const hub=cyl(g,radius*.34,.055,0,0,.112,M.steel,18);
-  hub.rotation.x=Math.PI/2;
-  const cap=cyl(g,.07,.045,0,0,.151,M.grey,10);
-  cap.rotation.x=Math.PI/2;
-}
 function desk(parent,x,y,z,width=2.3) {
   box(parent,width,.13,.9,x,y,z,M.wood);
   for(const dx of [-width/2+.13,width/2-.13])box(parent,.11,y-.5,.11,x+dx,(y-.5)/2,z-.28,M.steel);
@@ -161,15 +147,15 @@ function plant(parent,x,z,scale=1) {
   return g;
 }
 function lights(scene) {
-  scene.add(new THREE.HemisphereLight(0xeaf4ff,0x344454,2.45));
-  const key=new THREE.DirectionalLight(0xfff5e4,3.0);
+  scene.add(new THREE.HemisphereLight(0xf2f6fc,0x414b56,2.45));
+  const key=new THREE.DirectionalLight(0xfff6ea,2.82);
   key.position.set(-18,30,22);key.castShadow=true;
   key.shadow.mapSize.set(2048,2048);
   key.shadow.camera.left=-35;key.shadow.camera.right=35;
   key.shadow.camera.top=35;key.shadow.camera.bottom=-35;
   key.shadow.camera.far=95;key.shadow.bias=-.00015;
   scene.add(key);
-  const fill=new THREE.DirectionalLight(0xb5d6ef,1.1);
+  const fill=new THREE.DirectionalLight(0xc9dcf1,1.2);
   fill.position.set(20,14,-18);scene.add(fill);
 }
 function buildHall(scene) {
@@ -244,14 +230,12 @@ function buildHall(scene) {
   sign(structure,'OFICINA DE VEÍCULOS PESADOS',-2.5,6.4,-13.73,9.2,.72);
   return {structure,roof};
 }
-function buildFlow(scene) {
+function buildFlow(scene,curve) {
   const flow=group(scene,'Percurso indicativo','flow');
-  const pts=LAYOUT.route.map(p=>new THREE.Vector3(p[0],.061,p[1]));
-  const curve=new THREE.CatmullRomCurve3(pts,false,'centripetal',.22);
   const geometry=new THREE.TubeGeometry(curve,105,.075,5,false);
   flow.add(new THREE.Mesh(geometry,M.yellow));
   [0.1,.28,.49,.68,.84,.95].forEach(t=>{
-    const p=curve.getPoint(t),tan=curve.getTangent(t);
+    const p=curve.getPointAt(t),tan=curve.getTangentAt(t);
     flatArrow(flow,p.x,p.z,Math.atan2(tan.z,tan.x),.87);
   });
   // Eixos de referência na entrada e junto à saída sem invadir área útil.
@@ -416,41 +400,6 @@ function makeRack(scene) {
   outline(g,-8.25,z,20.6,3.2,M.grey);
   return g;
 }
-function makeTruck(scene) {
-  const g=group(scene,'Camião de caixa','truck');
-  g.position.set(-7.8,0,1.5);
-  // estrutura inferior e caixa
-  box(g,2.85,.36,11.4,0,.9,.75,M.steel);
-  box(g,2.72,3.0,9.0,0,2.55,-.65,M.white);
-  box(g,2.83,.12,9.13,0,4.13,-.65,M.offWhite);
-  // painéis de chapa canelada
-  for(const x of [-1.39,1.39]){
-    for(let i=0;i<18;i++)box(g,.023,2.8,.02,x,2.55,-4.65+i*.48,M.offWhite,false);
-  }
-  box(g,2.91,.1,9.0,0,1.03,-.65,M.steelLight);
-  // cabine frontal
-  box(g,2.63,2.4,2.7,0,2.05,5.35,M.white);
-  box(g,2.5,.95,1.25,0,1.64,7.28,M.white);
-  // para-brisas e vidro lateral
-  box(g,2.2,1.05,.055,0,2.68,6.73,M.window);
-  for(const side of [-1,1]){
-    box(g,.07,.8,1.18,side*1.327,2.68,5.55,M.window);
-    rod(g,[side*1.3,2.45,6.3],[side*1.83,2.47,6.5],.05,M.black);
-    box(g,.13,.32,.43,side*1.85,2.46,6.5,M.black);
-  }
-  box(g,1.6,.47,.11,0,1.25,7.91,M.black);
-  for(const x of [-.95,.95]){
-    box(g,.45,.27,.085,x,1.8,7.91,M.light);
-    box(g,.5,.19,.09,x,.99,7.92,M.steelLight);
-  }
-  // rodas e eixos
-  for(const x of [-1.5,1.5])for(const z of [-3.65,-2.35,4.85,6.9])wheel(g,x,.66,z);
-  box(g,2.9,.3,.28,0,.6,7.9,M.steelLight);
-  // pequenas luzes laterais
-  for(let k=0;k<4;k++)box(g,.06,.18,.23,1.43,1.19,-3+k*2,M.yellow,false);
-  outline(scene,-7.8,3.1,5,15.3,M.grey);
-  return g;
-}
 function makeLift(scene) {
   const g=group(scene,'Elevador de dois postes central','lift');
   for(const x of [1.6,5.5]){
@@ -529,13 +478,16 @@ export function createWorkshop() {
   scene.fog=new THREE.Fog(0x101922,80,160);
   lights(scene);
   const base=buildHall(scene);
-  const flow=buildFlow(scene);
+  const vehicleRoute=createVehicleRoute();
+  const flow=buildFlow(scene,vehicleRoute.curve);
+  const vehicleSlot=group(scene,'Veículo selecionado','truck');
+  outline(scene,-7.8,3.1,5,15.3,M.grey);
   const elements=[
     makeHeavy(scene),makeBalancing(scene),makeAlignment(scene),
-    makeTruck(scene),makeLift(scene),makeRack(scene),makeOffice(scene)
+    makeLift(scene),makeRack(scene),makeOffice(scene)
   ];
   wallPosters(scene);
   const groups=new Map();
   scene.traverse(object=>{if(object.userData.zoneId)groups.set(object.userData.zoneId,object);});
-  return {scene,structure:base.structure,roof:base.roof,flow,truck:groups.get('truck'),groups,elements,zoneData:ZONES};
+  return {scene,structure:base.structure,roof:base.roof,flow,vehicleRoute,vehicleSlot,groups,elements,zoneData:ZONES};
 }

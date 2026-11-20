@@ -3,10 +3,17 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { LAYOUT, TOUR, ZONES, ZONE_BY_ID } from './config.js';
 import { createWorkshop } from './scene.js';
+import { createVehicleModel, VEHICLE_TYPES } from './vehicles.js';
+import { createVehicleController } from './vehicle-controller.js';
+import { createRouteValidator } from './vehicle-clearance.js';
 
 const $ = id => document.getElementById(id);
 const host=$('scene');
-const { scene, structure, roof, flow, truck, groups, elements } = createWorkshop();
+const { scene, structure, roof, flow, vehicleRoute, vehicleSlot, groups, elements } = createWorkshop();
+const vehicles = createVehicleController(vehicleSlot,vehicleRoute,createVehicleModel,{
+  getBounds:model=>new THREE.Box3().setFromObject(model,true),
+  validateRoute:createRouteValidator(vehicleRoute,[structure,roof,...elements])
+});
 const renderer = new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.65));
 renderer.shadowMap.enabled=true;
@@ -151,9 +158,10 @@ buildTourList();
 
 function updateTourUI(){
   const item=TOUR[index],n=TOUR.length;
+  const vehicle=item.zone==='truck' ? VEHICLE_TYPES[vehicles.type] : null;
   $('current-title').textContent=item.title;
   $('step-title').textContent=item.title;
-  $('step-description').textContent=item.description;
+  $('step-description').textContent=vehicle?.description ?? item.description;
   $('step-total').textContent=String(index+1).padStart(2,'0')+' / '+String(n).padStart(2,'0');
   $('step-label').textContent='ETAPA '+String(index+1).padStart(2,'0')+' / '+String(n).padStart(2,'0');
   $('tour-progress').style.width=((index+1)/n*100)+'%';
@@ -191,14 +199,25 @@ function moveOrbit(position,target,immediate=false){
     tween={p:position,t:target};
   }
 }
+function vehicleView(model){
+  const {center:target,radius}=new THREE.Box3().setFromObject(model)
+    .getBoundingSphere(new THREE.Sphere());
+  const halfFov=THREE.MathUtils.degToRad(camera.fov/2);
+  const fitAngle=Math.min(halfFov,Math.atan(Math.tan(halfFov)*camera.aspect));
+  const distance=Math.max(5.5,1.12*radius/Math.sin(fitAngle));
+  const offset=new THREE.Vector3(-.86,.62,1).normalize()
+    .applyAxisAngle(new THREE.Vector3(0,1,0),model.rotation.y);
+  return {position:target.clone().addScaledVector(offset,distance),target};
+}
 function goTo(i,immediate=false){
   const fromOtherMode=mode!=='orbit';
   index=Math.max(0,Math.min(TOUR.length-1,i));
   switchMode('orbit');
   followOverview=index===0;
   const entry=TOUR[index];
-  const position=followOverview?overviewPosition:new THREE.Vector3(...entry.position);
-  const target=followOverview?overviewTarget:new THREE.Vector3(...entry.target);
+  const vehicle=entry.zone==='truck' && vehicles.model ? vehicleView(vehicles.model) : null;
+  const position=vehicle?.position ?? (followOverview?overviewPosition:new THREE.Vector3(...entry.position));
+  const target=vehicle?.target ?? (followOverview?overviewTarget:new THREE.Vector3(...entry.target));
   moveOrbit(position,target,immediate||fromOtherMode);
   updateTourUI();
   hideDetail();
@@ -214,7 +233,9 @@ function switchMode(next){
   activeCamera={orbit:camera,top:mapCamera,walk:walkCamera}[mode];
   if(mode==='walk'){
     // Começar no corredor da entrada e olhar para o interior.
-    walkCamera.position.set(LAYOUT.route[1][0],walkEyeHeight,LAYOUT.entrance.z);
+    const x=LAYOUT.route[1][0],z=LAYOUT.entrance.z;
+    const besideVehicle=vehicleOccupies(vehicles.model,vehicles.localBounds,x,z);
+    walkCamera.position.set(x,walkEyeHeight,z+(besideVehicle?LAYOUT.entrance.opening*.35:0));
     walkYaw=-Math.PI/2;
     walkPitch=-.025;
     walkCamera.rotation.set(walkPitch,walkYaw,0,'YXZ');
@@ -238,25 +259,64 @@ function toggle(name,button){
     const visible=labelLayer.classList.toggle('shown');
     button.classList.toggle('active',visible);button.setAttribute('aria-pressed',String(visible));
   }
-  if(name==='truck'){
-    if(!truck.visible && mode==='walk' && obstacles.some(({bounds,group})=>
-      group===truck && touchesObstacle(bounds,walkCamera.position.x,walkCamera.position.z))){
-      toast('Afasta-te da posição do camião para o voltar a mostrar.');
-      return;
-    }
-    truck.visible=!truck.visible;button.classList.toggle('active',!truck.visible);
-    button.setAttribute('aria-pressed',String(!truck.visible));
-    button.querySelector('span').textContent=truck.visible?'Ocultar camião':'Mostrar camião';
-  }
 }
 document.querySelectorAll('[data-toggle]').forEach(btn=>btn.addEventListener('click',()=>toggle(btn.dataset.toggle,btn)));
+
+const vehicleSelect=$('vehicle-select');
+const vehicleStart=$('vehicle-start');
+const vehiclePause=$('vehicle-pause');
+const vehicleReset=$('vehicle-reset');
+const vehicleStatus=$('vehicle-status');
+vehicleSelect.value=vehicles.type;
+const routeMessages={
+  empty:'', idle:'Pronto junto à entrada', running:'Em movimento',
+  paused:'Percurso em pausa', finished:'Chegada à saída',
+  unavailable:'Percurso indisponível para este veículo'
+};
+function updateVehicleControls(){
+  const {status}=vehicles;
+  vehicleStart.disabled=status!=='idle';
+  vehiclePause.disabled=status!=='running' && status!=='paused';
+  vehicleReset.disabled=status==='empty' || status==='unavailable';
+  vehiclePause.textContent=status==='paused'?'Continuar':'Pausar';
+  vehicleStatus.textContent=routeMessages[status];
+}
+function canPlaceVehicle(model,bounds){
+  return mode!=='walk' || !vehicleOccupies(model,bounds,walkCamera.position.x,walkCamera.position.z);
+}
+vehicleSelect.addEventListener('change',()=>{
+  if(!vehicles.select(vehicleSelect.value,canPlaceVehicle)){
+    vehicleSelect.value=vehicles.type;
+    toast('Não foi possível colocar o veículo. Confirma que a zona de entrada está livre.');
+    return;
+  }
+  if(selectedZone==='truck')hideDetail();
+  if(TOUR[index].zone==='truck'){
+    if(mode==='orbit')goTo(index);
+    else updateTourUI();
+  }
+  updateVehicleControls();
+});
+vehicleStart.addEventListener('click',()=>{
+  if(vehicles.start())updateVehicleControls();
+});
+vehiclePause.addEventListener('click',()=>{
+  const changed=vehicles.status==='paused' ? vehicles.start() : vehicles.pause();
+  if(changed)updateVehicleControls();
+});
+vehicleReset.addEventListener('click',()=>{
+  if(vehicles.restart(canPlaceVehicle))updateVehicleControls();
+  else toast('Afasta-te da zona de entrada para reiniciar o percurso.');
+});
+updateVehicleControls();
 
 function hideDetail(){
   selectedZone=null;$('detail-card').hidden=true;
   if(boxHelper){scene.remove(boxHelper);boxHelper.geometry.dispose();boxHelper.material.dispose();boxHelper=null;}
 }
 function selectZone(zone){
-  const info=ZONE_BY_ID[zone];if(!info)return;
+  const info=zone==='truck' ? VEHICLE_TYPES[vehicles.type] : ZONE_BY_ID[zone];
+  if(!info)return;
   hideDetail();selectedZone=zone;
   $('detail-title').textContent=info.name;
   $('detail-text').textContent=info.description;
@@ -276,6 +336,11 @@ $('focus-selection').addEventListener('click',()=>{
   const fromOtherMode=mode!=='orbit';
   switchMode('orbit');
   followOverview=false;
+  if(selectedZone==='truck' && vehicles.model){
+    const {position,target}=vehicleView(vehicles.model);
+    moveOrbit(position,target,fromOtherMode);
+    return;
+  }
   const target=new THREE.Vector3(...z.position);
   moveOrbit(target.clone().add(new THREE.Vector3(12,10,13)),target,fromOtherMode);
 });
@@ -289,7 +354,8 @@ renderer.domElement.addEventListener('pointerup',e=>{
   const rect=renderer.domElement.getBoundingClientRect();
   mouse.set((e.clientX-rect.left)/rect.width*2-1,-((e.clientY-rect.top)/rect.height*2-1));
   raycaster.setFromCamera(mouse,activeCamera);
-  const hits=raycaster.intersectObjects([...groups.values()],true);
+  const visibleGroups=[...groups.values()].filter(group=>group.visible);
+  const hits=raycaster.intersectObjects(visibleGroups,true);
   for(const hit of hits){
     let node=hit.object;
     while(node && !node.userData.zoneId)node=node.parent;
@@ -316,6 +382,7 @@ document.addEventListener('mousemove',e=>{
   walkPitch=THREE.MathUtils.clamp(walkPitch-e.movementY*.0023,-Math.PI/3,Math.PI/3);
 });
 document.addEventListener('keydown',e=>{
+  if(e.target instanceof HTMLSelectElement)return;
   if(e.code==='Escape'){hideDetail();return;}
   if(mode==='walk' && walkKeys.has(e.code) && !e.altKey && !e.ctrlKey && !e.metaKey){
     e.preventDefault();
@@ -333,10 +400,17 @@ function touchesObstacle(bounds,x,z){
   return x>bounds.min.x-walkRadius && x<bounds.max.x+walkRadius
     && z>bounds.min.z-walkRadius && z<bounds.max.z+walkRadius;
 }
+function vehicleOccupies(model,bounds,x,z){
+  if(!model)return false;
+  const dx=x-model.position.x,dz=z-model.position.z;
+  const cos=Math.cos(model.rotation.y),sin=Math.sin(model.rotation.y);
+  return touchesObstacle(bounds,dx*cos-dz*sin,dx*sin+dz*cos);
+}
 function walkCollides(x,z){
   // Contenção conceptual no interior da nave e à frente do vidro administrativo.
   if(x<-LAYOUT.width/2+.55 || x>LAYOUT.officeX-walkRadius || Math.abs(z)>LAYOUT.depth/2-.6)return true;
-  return obstacles.some(({bounds,group})=>group.visible && touchesObstacle(bounds,x,z));
+  return vehicleOccupies(vehicles.model,vehicles.localBounds,x,z) ||
+    obstacles.some(({bounds,group})=>group.visible && touchesObstacle(bounds,x,z));
 }
 function walkStep(dt){
   walkCamera.rotation.set(walkPitch,walkYaw,0,'YXZ');
@@ -387,6 +461,10 @@ goTo(0,true);
 
 function animate(){
   const dt=clock.getDelta();
+  if(vehicles.update(Math.min(dt,.1),mode==='walk'?canPlaceVehicle:undefined)){
+    updateVehicleControls();
+    if(vehicles.status==='paused')toast('Percurso em pausa. Afasta-te do veículo para continuar.');
+  }
   if(mode==='walk')walkStep(dt);
   else if(mode==='top')mapControls.update();
   else{
