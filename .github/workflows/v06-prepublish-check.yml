@@ -1,0 +1,26 @@
+name: Validação V0.6 antes de publicação
+
+on:
+  push:
+    branches:
+      - validation/v06-prepublish
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obter código e histórico
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Testes de regressão V0.6
+        run: npm test
+      - name: Validar alterações face à main
+        run: git diff --check origin/main...HEAD
