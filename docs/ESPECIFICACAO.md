@@ -9,7 +9,7 @@ Primeira implementação interativa conceptual baseada nas imagens aprovadas pel
 - **Pneus pesados / montagem e equilibragem / alinhamento** distribuídos na parede do fundo.
 - Remover a antiga zona 'ELEVADOR' à direita do alinhamento, mantendo a circulação.
 - Manter o **equipamento vermelho de dois postes na área central**.
-- **Camião** ao centro e **rack vermelho com pneus** na frente esquerda.
+- **Área central livre no arranque** e **rack vermelho com pneus** na frente esquerda.
 - **Balneários, receção/espera, sala de reuniões e escritório** no bloco envidraçado do lado direito.
 - **Percurso amarelo indicativo:** entrada esquerda → corredor técnico → curva à direita → saída frontal direita.
 
@@ -18,7 +18,9 @@ Primeira implementação interativa conceptual baseada nas imagens aprovadas pel
 - Órbita/pan/zoom e câmara animada por visita guiada.
 - Caminhada ao nível do solo com WASD/setas e movimento do rato.
 - Vista de planta ortográfica.
-- Mostrar/ocultar cobertura, percurso, etiquetas e camião.
+- Mostrar/ocultar cobertura, percurso e etiquetas.
+- Escolher um veículo de cada vez entre camião, jipe, carro ligeiro e trator. A opção «Sem veículo» liberta a oficina e repõe o estado inicial do percurso.
+- O veículo prepara-se à entrada, de frente para +X. Pode iniciar, pausar, continuar e reiniciar a demonstração até junto da saída.
 - Cliques nos equipamentos mostram cartão informativo.
 - Interface dark premium, responsiva e em português de Portugal.
 
